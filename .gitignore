@@ -1,0 +1,21 @@
+/node_modules
+/oh_modules
+/local.properties
+/.idea
+**/build
+/.hvigor
+.cxx
+/.clangd
+/.clang-format
+/.clang-tidy
+**/.test
+/.appanalyzer
+
+# 构建产物包
+*.hap
+*.har
+
+# 本地缓存与临时
+.cache/
+.linter/
+*.log
