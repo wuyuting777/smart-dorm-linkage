@@ -1,0 +1,15 @@
+# ===== DevEco Studio / hvigor 构建产物 =====
+/build/
+/.hvigor/
+/.idea/
+*.iml
+/local.properties
+/.cxx/
+/capture/
+
+# ===== Node / 依赖 =====
+node_modules/
+
+# ===== 系统垃圾文件 =====
+.DS_Store
+Thumbs.db
