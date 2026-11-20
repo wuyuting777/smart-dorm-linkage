@@ -9,7 +9,7 @@
 
 学生在宿舍中往往需要手动反复开关空调、台灯、风扇等设备。本应用面向"智能宿舍"场景，让用户自行编排"满足条件时自动执行设备动作"的联动规则，并在一个可调节的 Mock 环境中模拟运行、观察设备联动与执行日志，而不依赖真实硬件或云平台。
 
-选题对应作业主题三要求：至少4类可控设备、至少3项可调模拟环境数据、至少4条规则（含1条双条件规则）、规则引擎按实际输入计算触发结果、记录触发条件/设备变化/执行顺序、冲突有明确优先级、至少2组场景模拟、持久化设备设置/规则/执行记录。本作品在达标基础上扩展为5类设备、4项环境数据、5条规则。
+选题对应作业主题三要求：至少4类可控设备、至少3项可调模拟环境数据、至少4条规则（含1条双条件规则）、规则引擎按实际输入计算触发结果、记录触发条件/设备变化/执行顺序、冲突有明确优先级、至少2组场景模拟、持久化设备设置/规则/执行记录。本作品在达标基础上扩展为5类设备、4项环境数据、7条规则。
 
 ## 2. 用户与使用场景
 
@@ -22,7 +22,7 @@
 
 | 编号 | 功能 | 说明 | 对应指标 |
 |---|---|---|---|
-| F1 | 规则管理 | 新增、查看、修改、启用/停用规则 | ≥4条规则 |
+| F1 | 规则管理 | 新增、查看、修改、启用/停用、删除规则（删除前弹确认框防误删） | ≥4条规则 |
 | F2 | 双条件规则 | R1 由"高温+在场"两个条件共同决定 | 含1条双条件规则 |
 | F3 | Mock 环境调节 | 调节温度℃、光照lux、在场、湿度% 4项数据 | ≥3项环境数据 |
 | F4 | 设备面板 | 展示空调、台灯、窗帘、风扇、加湿器5类设备状态，可手动开关 | ≥4类设备 |
@@ -31,7 +31,7 @@
 | F7 | 手动锁定 | 手动操作的设备锁定后规则不强行改动，解锁恢复 | 自动/手动并存 |
 | F8 | 执行日志 | 记录时间、触发规则、命中条件、设备动作与执行顺序，可清空 | 记录触发/变化/顺序 |
 | F9 | 场景演练 | 预置≥2组场景一键模拟，也可手动自定义 | ≥2组场景 |
-| F10 | 数据持久化 | 规则、设备设置、环境快照存 Preferences；执行记录存 RDB；杀进程重启可恢复 | 持久化+恢复 |
+| F10 | 数据持久化 | 规则、设备设置、环境快照、空调模式、执行记录均存 Preferences；杀进程重启可恢复 | 持久化+恢复 |
 | F11 | 单元测试 | ≥6条自动化测试，覆盖正常/边界/异常 | 测试要求 |
 
 ### 3.2 规则定义（阈值默认可在界面编辑）
@@ -43,6 +43,8 @@
 | R3 低温制热 | 室温 < 16℃ | 关闭风扇；空调切换制热 | 2 | 启用 |
 | R4 无人兜底 | 无人在场 | 关闭全部设备 | 4（兜底强制） | 启用 |
 | R5 干燥加湿 | 空调处于制热状态 **且** 湿度 < 40% | 打开加湿器 | 1 | 启用 |
+| R6 光照充足关灯 | 光照 ≥ 100lux | 关闭台灯（与R2成对） | 1 | 启用 |
+| R7 湿度充足关加湿 | 湿度 ≥ 40% | 关闭加湿器（与R5成对） | 1 | 启用 |
 
 **优先级与冲突规则**：优先级数值越大越高。引擎先收集所有触发规则，按优先级降序执行；高优先级动作先落地；当低优先级动作与已执行的高优先级动作冲突（如高优先级已关闭风扇，低优先级尝试打开风扇），该冲突动作被丢弃并在日志中注明冲突。R4 兜底优先级最高、最后强制执行。
 **手动锁定**：设备 locked=true 时，规则引擎跳过对该设备的自动改写；用户在面板手动操作后可点"解锁"恢复自动管理。
@@ -60,19 +62,19 @@
 | 页面层 pages | 规则管理页、环境模拟页、设备面板页、执行日志页（Tabs 主容器） | ArkUI 布局、交互、结果反馈 |
 | 模型层 common/models | Rule / Device / EnvState / ExecLog 数据结构与枚举定义 | 类型与默认值 |
 | 规则引擎层 common/engine | 条件匹配、规则触发判定、冲突仲裁、动作序列与日志生成 | 纯 ArkTS 函数，可独立单测 |
-| 持久化层 common/store | Preferences 存规则/设备/环境快照；RDB 存执行记录 | 保存与重启恢复 |
-| 状态管理 | AppStorage/@ObservedV2/@Trace 共享页面间状态 | 页面联动更新 |
+| 持久化层 common/store | Preferences 存规则/设备/环境快照/空调模式/执行日志 | 保存与重启恢复 |
+| 状态管理 | 页面层 @State 管理本地状态，引擎纯函数与 UI 解耦 | 页面联动更新 |
 
 ## 5. 数据模型
 
 | 对象 | 关键字段与类型 | 业务含义 | 存储方式 |
 |---|---|---|---|
 | Rule | id:string; name:string; conditions:Condition[]; logic:'AND'|'OR'; actions:RuleAction[]; priority:number; enabled:boolean | 一条联动规则 | Preferences(JSON数组) |
-| Condition | type:'tempAbove'|'tempBelow'|'lightBelow'|'present'|'humidityBelow'|'acHeating'; operator:'>='|'<'|'=='; value:number|boolean | 单个条件 | 随 Rule |
+| Condition | type:'tempAbove'|'tempBelow'|'lightBelow'|'lightAbove'|'present'|'humidityBelow'|'humidityAbove'|'acHeating'; operator:'>='|'<'|'=='; value:number|boolean | 单个条件 | 随 Rule |
 | RuleAction | deviceId:string; action:'on'|'off'|'setMode'; target?:number|string | 规则触发后的动作 | 随 Rule |
 | Device | id:string; type:'ac'|'lamp'|'curtain'|'fan'|'humidifier'; name:string; on:boolean; locked:boolean; targetValue?:number | 一台可控设备 | Preferences(JSON数组) |
 | EnvState | temp:number; light:number; present:boolean; humidity:number | 当前 Mock 环境快照 | Preferences |
-| ExecLog | id:string; time:string; ruleName:string; conditionDesc:string; actions:string[]; order:number; conflict?:string | 一条执行记录 | RDB(exec_log表) |
+| ExecLog | id:string; time:string; ruleName:string; conditionDesc:string; actions:string[]; order:number; conflict?:string | 一条执行记录 | Preferences(JSON数组) |
 
 ## 6. 接口设计（规则引擎核心，纯函数）
 
@@ -85,8 +87,8 @@
 
 ## 7. 持久化设计
 
-- **Preferences**：保存 rules 数组、devices 数组、最近一次 env 快照；应用启动时读取还原。
-- **RDB**：建立 exec_log 表，持久化每条执行记录；提供追加与清空接口。
+- **Preferences**：保存 rules 数组、devices 数组、最近一次 env 快照、空调模式与执行日志数组；应用启动时读取还原。
+- **实现说明**：早期设计的 RDB 存执行记录，实现中统一改为轻量 Preferences 键值存储，与本报告、源码一致。
 - **恢复验证**：运行联动产生数据 → 结束应用进程 → 重新打开，规则、设备设置与历史日志仍可读取。
 
 ## 8. 测试方案（≥6条，覆盖正常/边界/异常）
@@ -101,7 +103,7 @@
 | 异常 | T6 手动锁定 | 目标设备 locked=true，规则尝试改它 | 跳过该设备自动动作 |
 | 正常(补) | T7 冲突优先级 | R1关风扇与低优先级开风扇竞争 | 高优先级R1生效，低优先级动作被丢弃 |
 
-测试框架：@ohos/hypium + MockKit，ohosTest 目录下 LocalUnit 测试类，对规则引擎纯函数直接断言。
+测试框架：@ohos/hypium，ohosTest 目录下 OnDevice Instrument Test（在设备侧运行，可引用 main 模块），对规则引擎纯函数直接断言。
 
 ## 9. 分工
 
@@ -110,7 +112,7 @@
 ## 10. 验收标准
 
 1. 应用可在 DevEco Studio 编译运行，4个页面可切换、交互有反馈。
-2. 5条规则可增改启停；双条件R1、兜底R4、干燥R5行为正确。
+2. 7条规则可增改启停删除；双条件R1、兜底R4、干燥R5、反向R6/R7行为正确。
 3. 规则引擎对给定环境输入真实计算，日志含触发规则、条件、动作与顺序。
 4. 冲突按优先级仲裁；手动锁定设备不被自动改写。
 5. 规则、设备设置、环境快照、执行记录持久化，杀进程重启可恢复。
