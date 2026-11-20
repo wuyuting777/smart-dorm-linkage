@@ -132,6 +132,12 @@ struct Index {
     this.persist();
   }
 
+  /** 删除规则 */
+  deleteRule(id: string): void {
+    this.rules = this.rules.filter((r: Rule): boolean => r.id !== id);
+    this.persist();
+  }
+
   private condLabelOf(t: CondType): string {
     if (t === CondType.TEMP_ABOVE) return '温度高于';
     if (t === CondType.TEMP_BELOW) return '温度低于';
@@ -404,6 +410,15 @@ struct Index {
             Text(r.name).fontSize(15).fontWeight(FontWeight.Bold).layoutWeight(1)
             Text('编辑').fontSize(12).fontColor('#2E6BE6').margin({ right: 8 })
               .onClick(() => this.startEdit(r))
+            Text('删除').fontSize(12).fontColor('#D9534F').margin({ right: 8 })
+              .onClick(() => {
+                AlertDialog.show({
+                  title: '删除规则',
+                  message: `确定删除规则「${r.name}」吗？此操作不可撤销。`,
+                  primaryButton: { value: '删除', fontColor: '#D9534F', action: () => this.deleteRule(r.id) },
+                  secondaryButton: { value: '取消', action: () => { } }
+                });
+              })
             Toggle({ type: ToggleType.Switch, isOn: r.enabled })
               .onChange(() => this.toggleRule(r.id))
           }
