@@ -36,6 +36,12 @@ struct Index {
     if (savedRules) {
       this.rules = savedRules;
     }
+    // 旧缓存缺失新增预置规则时幂等补全（不重复添加）
+    const existingIds: Set<string> = new Set(this.rules.map((r: Rule): string => r.id));
+    const missing: Rule[] = defaultRules().filter((r: Rule): boolean => !existingIds.has(r.id));
+    if (missing.length > 0) {
+      this.rules = this.rules.concat(missing);
+    }
     const savedDevices: Device[] | null = await loadDevices(ctx);
     if (savedDevices) {
       this.devices = savedDevices;
@@ -142,6 +148,8 @@ struct Index {
     if (t === CondType.TEMP_ABOVE) return '温度高于';
     if (t === CondType.TEMP_BELOW) return '温度低于';
     if (t === CondType.LIGHT_BELOW) return '光照低于';
+    if (t === CondType.LIGHT_ABOVE) return '光照高于';
+    if (t === CondType.HUMIDITY_ABOVE) return '湿度高于';
     return '湿度低于';
   }
 
@@ -149,6 +157,8 @@ struct Index {
     if (label === '温度高于') return CondType.TEMP_ABOVE;
     if (label === '温度低于') return CondType.TEMP_BELOW;
     if (label === '光照低于') return CondType.LIGHT_BELOW;
+    if (label === '光照高于') return CondType.LIGHT_ABOVE;
+    if (label === '湿度高于') return CondType.HUMIDITY_ABOVE;
     return CondType.HUMIDITY_BELOW;
   }
 
@@ -198,7 +208,7 @@ struct Index {
   saveForm(): void {
     const threshold: number = Number(this.fThreshold);
     const cType: CondType = this.condTypeOfLabel(this.fCondLabel);
-    const operator: '>=' | '<' = cType === CondType.TEMP_ABOVE ? '>=' : '<';
+    const operator: '>=' | '<' = (cType === CondType.TEMP_ABOVE || cType === CondType.LIGHT_ABOVE || cType === CondType.HUMIDITY_ABOVE) ? '>=' : '<';
     const deviceId: string = this.deviceIdOfLabel(this.fDeviceLabel);
     const action: 'on' | 'off' = this.fActionOn ? 'on' : 'off';
     const priority: number = Number(this.fPriority) || 1;
@@ -343,7 +353,7 @@ struct Index {
         .onChange((v: string) => { this.fName = v; })
       Row({ space: 8 }) {
         Text('条件').fontSize(13).layoutWeight(1)
-        ForEach(['温度高于', '温度低于', '光照低于', '湿度低于'], (label: string) => {
+        ForEach(['温度高于', '温度低于', '光照低于', '光照高于', '湿度低于', '湿度高于'], (label: string) => {
           Text(label)
             .fontSize(12)
             .padding({ left: 8, right: 8, top: 4, bottom: 4 })

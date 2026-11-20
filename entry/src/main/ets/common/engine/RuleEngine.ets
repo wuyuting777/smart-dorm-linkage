@@ -30,10 +30,14 @@ export function matchCondition(cond: Condition, env: EnvState, acMode: AcMode): 
       return env.temp < (cond.value as number);
     case CondType.LIGHT_BELOW:
       return env.light < (cond.value as number);
+    case CondType.LIGHT_ABOVE:
+      return env.light >= (cond.value as number);
     case CondType.PRESENT:
       return env.present === (cond.value as boolean);
     case CondType.HUMIDITY_BELOW:
       return env.humidity < (cond.value as number);
+    case CondType.HUMIDITY_ABOVE:
+      return env.humidity >= (cond.value as number);
     case CondType.AC_HEATING:
       return acMode === 'heating';
     default:
@@ -50,10 +54,14 @@ export function conditionDesc(cond: Condition): string {
       return `室温<${cond.value}℃`;
     case CondType.LIGHT_BELOW:
       return `光照<${cond.value}lux`;
+    case CondType.LIGHT_ABOVE:
+      return `光照≥${cond.value}lux`;
     case CondType.PRESENT:
       return (cond.value as boolean) ? '在场' : '无人';
     case CondType.HUMIDITY_BELOW:
       return `湿度<${cond.value}%`;
+    case CondType.HUMIDITY_ABOVE:
+      return `湿度≥${cond.value}%`;
     case CondType.AC_HEATING:
       return '空调制热中';
     default:

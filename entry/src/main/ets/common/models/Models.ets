@@ -15,8 +15,10 @@ export enum CondType {
   TEMP_ABOVE = 'tempAbove',      // 室温 ≥ 阈值
   TEMP_BELOW = 'tempBelow',       // 室温 < 阈值
   LIGHT_BELOW = 'lightBelow',     // 光照 < 阈值
+  LIGHT_ABOVE = 'lightAbove',     // 光照 ≥ 阈值（光照充足）
   PRESENT = 'present',            // 人体在场判定
   HUMIDITY_BELOW = 'humidityBelow', // 湿度 < 阈值
+  HUMIDITY_ABOVE = 'humidityAbove', // 湿度 ≥ 阈值（湿度充足）
   AC_HEATING = 'acHeating'        // 空调处于制热状态
 }
 
@@ -170,6 +172,32 @@ export function defaultRules(): Rule[] {
       logic: LogicOp.AND,
       actions: [
         { deviceId: 'dev-humidifier', action: 'on' }
+      ],
+      priority: 1,
+      enabled: true
+    },
+    {
+      id: 'r6',
+      name: 'R6 光照充足关灯',
+      conditions: [
+        { type: CondType.LIGHT_ABOVE, operator: '>=', value: 100 }
+      ],
+      logic: LogicOp.AND,
+      actions: [
+        { deviceId: 'dev-lamp', action: 'off' }
+      ],
+      priority: 1,
+      enabled: true
+    },
+    {
+      id: 'r7',
+      name: 'R7 湿度充足关加湿',
+      conditions: [
+        { type: CondType.HUMIDITY_ABOVE, operator: '>=', value: 40 }
+      ],
+      logic: LogicOp.AND,
+      actions: [
+        { deviceId: 'dev-humidifier', action: 'off' }
       ],
       priority: 1,
       enabled: true
